@@ -1,0 +1,15 @@
+/* 
+  Localizable.strings
+  MovieQuiz
+
+  Created by MAKOVEY Vladislav on 07.08.2023.
+  
+*/
+
+// common
+"common_question" = "Рейтинг этого фильма больше чем 6?";
+
+// alert
+"alert_title" = "Этот раунд окончен!";
+"alert_message" = "Ваш результат:";
+"alert_button_text" = "Сыграть еще раз";
