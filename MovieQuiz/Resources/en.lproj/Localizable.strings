@@ -1,0 +1,15 @@
+/* 
+  Localizable.strings
+  MovieQuiz
+
+  Created by MAKOVEY Vladislav on 07.08.2023.
+  
+*/
+
+// common
+"common_question" = "Is this movie rated more than 6?";
+
+// alert
+"alert_title" = "This round is over!";
+"alert_message" = "Your result:";
+"alert_button_text" = "Play again";
