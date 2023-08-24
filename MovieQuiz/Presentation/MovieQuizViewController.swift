@@ -1,9 +1,5 @@
 import UIKit
 
-private extension String {
-    static let commonQuestion = "common_question".localized
-}
-
 private extension CGFloat {
     static let borderWidth: CGFloat = 8
     static let borderRadius: CGFloat = 20
@@ -15,21 +11,12 @@ private extension Double {
 
 final class MovieQuizViewController: UIViewController {
     // MARK: - Properties
-    private var questions: [QuizQuestionModel] = [
-        .init(image: "Vivarium", text: .commonQuestion, correctAnswer: false),
-        .init(image: "The Godfather", text: .commonQuestion, correctAnswer: true),
-        .init(image: "Old", text: .commonQuestion, correctAnswer: false),
-        .init(image: "The Dark Knight", text: .commonQuestion, correctAnswer: true),
-        .init(image: "Kill Bill", text: .commonQuestion, correctAnswer: true),
-        .init(image: "Tesla", text: .commonQuestion, correctAnswer: false),
-        .init(image: "The Avengers", text: .commonQuestion, correctAnswer: true),
-        .init(image: "Deadpool", text: .commonQuestion, correctAnswer: true),
-        .init(image: "The Green Knight", text: .commonQuestion, correctAnswer: true),
-        .init(image: "The Ice Age Adventures of Buck Wild", text: .commonQuestion, correctAnswer: false)
-    ]
-    
+    private var questionFactory: IQuestionFactory?
+    private var currentQuestion: QuizQuestionModel?
+
     private var currentQuestionIndex: Int = .zero
     private var correctAnswers: Int = .zero
+    private let basicSizeOfQuestions = 10
     
     // MARK: - UI
     @IBOutlet private weak var questionLabel: UILabel!
@@ -49,12 +36,10 @@ final class MovieQuizViewController: UIViewController {
         .lightContent
     }
     
-    // MARK: - Functions
+    // MARK: - Methods
     private func setupInitialState() {
-        questions = questions.shuffled()
-        guard let firstQuestion = questions[safe: currentQuestionIndex] else { return }
-        let viewModel = convert(model: firstQuestion)
-        show(viewModel: viewModel)
+        questionFactory = QuestionFactory(delegate: self)
+        questionFactory?.fetchNextQuestion()
     }
     
     private func setupUI() {
@@ -73,17 +58,7 @@ final class MovieQuizViewController: UIViewController {
         posterImageView.layer.borderWidth = .zero
         
         currentQuestionIndex += 1
-        guard let nextQuestion = questions[safe: currentQuestionIndex] else {
-            let alertViewModel = QuizResultsViewModel(
-                title: "alert_title".localized,
-                text: "\("alert_message".localized) \(correctAnswers)/\(questions.count)",
-                buttonText: "alert_button_text".localized
-            )
-            
-            return showResult(viewModel: alertViewModel)
-        }
-        let viewModel = convert(model: nextQuestion)
-        show(viewModel: viewModel)
+        questionFactory?.fetchNextQuestion()
     }
     
     private func showAnswerResult(isCorrect: Bool) {
@@ -97,38 +72,16 @@ final class MovieQuizViewController: UIViewController {
         addBorder(with: borderColor)
         
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + .delay) {
-            self.showNextQuestionOrResult()
+        DispatchQueue.main.asyncAfter(deadline: .now() + .delay) { [weak self] in
+            self?.showNextQuestionOrResult()
         }
-    }
-    
-    private func showResult(viewModel: QuizResultsViewModel) {
-        let alert = UIAlertController(
-            title: viewModel.title,
-            message: viewModel.text,
-            preferredStyle: .alert
-        )
-        
-        let action = UIAlertAction(title: viewModel.buttonText, style: .default) { _ in
-            self.questions = self.questions.shuffled()
-            
-            self.currentQuestionIndex = .zero
-            self.correctAnswers = .zero
-            
-            guard let firstQuestion = self.questions[safe: self.currentQuestionIndex] else { return }
-            let viewModel = self.convert(model: firstQuestion)
-            self.show(viewModel: viewModel)
-        }
-        
-        alert.addAction(action)
-        self.present(alert, animated: true, completion: nil)
     }
     
     private func convert(model: QuizQuestionModel) -> QuizStepViewModel {
         .init(
             image: .init(named: model.image) ?? UIImage(),
             question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questions.count)"
+            questionNumber: "\(currentQuestionIndex + 1)/\(questionFactory?.quantity ?? basicSizeOfQuestions)"
         )
     }
     
@@ -139,33 +92,52 @@ final class MovieQuizViewController: UIViewController {
     
     // MARK: - Actions
     @IBAction private func noButtonTapped() {
-        guard let currentQuestion = questions[safe: currentQuestionIndex] else { return }
+        guard let currentQuestion else { return }
         let usersAnswer = false
         showAnswerResult(isCorrect: usersAnswer == currentQuestion.correctAnswer)
     }
     
     @IBAction private func yesButtonTapped() {
-        guard let currentQuestion = questions[safe: currentQuestionIndex] else { return }
+        guard let currentQuestion else { return }
         let usersAnswer = true
         showAnswerResult(isCorrect: usersAnswer == currentQuestion.correctAnswer)
     }
 }
 
-// MARK: - Private Models
-private struct QuizQuestionModel {
-    let image: String
-    let text: String
-    let correctAnswer: Bool
-}
-
-private struct QuizStepViewModel {
-    let image: UIImage
-    let question: String
-    let questionNumber: String
-}
-
-private struct QuizResultsViewModel {
-    let title: String
-    let text: String
-    let buttonText: String
+// MARK: - IQuestionFactoryDelegate
+extension MovieQuizViewController: IQuestionFactoryDelegate {
+    func didReceiveNextQuestion(question: QuizQuestionModel?) {
+        guard let question else {
+            let alertViewModel = QuizResultsViewModel(
+                title: "alert_title".localized,
+                text: "\("alert_message".localized) \(correctAnswers)/\(questionFactory?.quantity ?? basicSizeOfQuestions)",
+                buttonText: "alert_button_text".localized
+            )
+                        
+            let alert = UIAlertController(
+                title: alertViewModel.title,
+                message: alertViewModel.text,
+                preferredStyle: .alert
+            )
+            
+            let action = UIAlertAction(title: alertViewModel.buttonText, style: .default) { [weak self] _ in
+                guard let self else { return }
+                self.currentQuestionIndex = .zero
+                self.correctAnswers = .zero
+                
+                self.questionFactory?.fetchNextQuestion()
+            }
+            
+            alert.addAction(action)
+            self.present(alert, animated: true, completion: nil)
+            
+            return
+        }
+        currentQuestion = question
+        let viewModel = convert(model: question)
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.show(viewModel: viewModel)
+        }
+    }
 }
