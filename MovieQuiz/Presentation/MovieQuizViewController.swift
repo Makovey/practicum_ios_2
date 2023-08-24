@@ -13,6 +13,7 @@ final class MovieQuizViewController: UIViewController {
     // MARK: - Properties
     private var questionFactory: IQuestionFactory?
     private var currentQuestion: QuizQuestionModel?
+    private var alertPresenter: IAlertPresenter?
 
     private var currentQuestionIndex: Int = .zero
     private var correctAnswers: Int = .zero
@@ -39,6 +40,7 @@ final class MovieQuizViewController: UIViewController {
     // MARK: - Methods
     private func setupInitialState() {
         questionFactory = QuestionFactory(delegate: self)
+        alertPresenter = AlertPresenter(controller: self)
         questionFactory?.fetchNextQuestion()
     }
     
@@ -108,28 +110,23 @@ final class MovieQuizViewController: UIViewController {
 extension MovieQuizViewController: IQuestionFactoryDelegate {
     func didReceiveNextQuestion(question: QuizQuestionModel?) {
         guard let question else {
-            let alertViewModel = QuizResultsViewModel(
-                title: "alert_title".localized,
-                text: "\("alert_message".localized) \(correctAnswers)/\(questionFactory?.quantity ?? basicSizeOfQuestions)",
-                buttonText: "alert_button_text".localized
-            )
-                        
-            let alert = UIAlertController(
-                title: alertViewModel.title,
-                message: alertViewModel.text,
-                preferredStyle: .alert
+            let alertViewModel = QuizResultsViewModel.makeViewModel(
+                correctAnswers: correctAnswers,
+                quantity: questionFactory?.quantity ?? basicSizeOfQuestions
             )
             
-            let action = UIAlertAction(title: alertViewModel.buttonText, style: .default) { [weak self] _ in
+            let alertModel = AlertModel(
+                title: alertViewModel.title,
+                message: alertViewModel.text,
+                buttonText: alertViewModel.buttonText
+            ) { [weak self] in
                 guard let self else { return }
                 self.currentQuestionIndex = .zero
                 self.correctAnswers = .zero
-                
                 self.questionFactory?.fetchNextQuestion()
             }
-            
-            alert.addAction(action)
-            self.present(alert, animated: true, completion: nil)
+                        
+            alertPresenter?.showResult(model: alertModel)
             
             return
         }
