@@ -12,10 +12,18 @@ struct QuizResultsViewModel {
     let text: String
     let buttonText: String
     
-    static func makeViewModel(correctAnswers: Int, quantity: Int) -> QuizResultsViewModel {
+    static func makeViewModel(
+        currentResult result: RecordModel,
+        statisticService: IStatisticService
+    ) -> QuizResultsViewModel {
         .init(
             title: "alert_title".localized,
-            text: "\("alert_message".localized) \(correctAnswers)/\(quantity)",
+            text: """
+                \("alert_message".localized) \(result.correctAnswers)/\(result.totalQuestions)
+                \("alert_quiz_count".localized) \(statisticService.gamesCount)
+                \("alert_record".localized) \(statisticService.record.correctAnswers)/\(statisticService.record.totalQuestions) (\(statisticService.record.date.dateTimeString))
+                \("alert_average_accuracy".localized) \(String(format: "%.2f", statisticService.totalAccuracy))%
+            """,
             buttonText: "alert_button_text".localized
         )
     }

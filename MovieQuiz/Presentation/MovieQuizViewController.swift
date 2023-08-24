@@ -1,29 +1,28 @@
 import UIKit
 
-private extension CGFloat {
-    static let borderWidth: CGFloat = 8
-    static let borderRadius: CGFloat = 20
-}
-
-private extension Double {
-    static let delay = 1.0
-}
-
 final class MovieQuizViewController: UIViewController {
+    private struct Constants {
+        static let borderWidth: CGFloat = 8
+        static let borderRadius: CGFloat = 20
+        static let delay = 1.0
+    }
+    
     // MARK: - Properties
-    private var questionFactory: IQuestionFactory?
+    private lazy var questionFactory: IQuestionFactory = QuestionFactory(delegate: self)
+    private lazy var alertPresenter: IAlertPresenter = AlertPresenter(controller: self)
+    private var statisticService: IStatisticService = StatisticService()
     private var currentQuestion: QuizQuestionModel?
-    private var alertPresenter: IAlertPresenter?
 
     private var currentQuestionIndex: Int = .zero
     private var correctAnswers: Int = .zero
-    private let basicSizeOfQuestions = 10
     
     // MARK: - UI
+    @IBOutlet private weak var questionTitleLabel: UILabel!
     @IBOutlet private weak var questionLabel: UILabel!
     @IBOutlet private weak var posterImageView: UIImageView!
     @IBOutlet private weak var counterLabel: UILabel!
-    @IBOutlet private var buttons: [UIButton]!
+    @IBOutlet private weak var noButton: UIButton!
+    @IBOutlet private weak var yesButton: UIButton!
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -38,15 +37,18 @@ final class MovieQuizViewController: UIViewController {
     }
     
     // MARK: - Methods
-    private func setupInitialState() {
-        questionFactory = QuestionFactory(delegate: self)
-        alertPresenter = AlertPresenter(controller: self)
-        questionFactory?.fetchNextQuestion()
-    }
-    
     private func setupUI() {
         posterImageView.layer.masksToBounds = true
-        posterImageView.layer.cornerRadius = .borderRadius
+        posterImageView.layer.cornerRadius = Constants.borderRadius
+        
+        questionTitleLabel.text = "common_question_text".localized
+        noButton.setTitle("no_button_text".localized, for: .normal)
+        yesButton.setTitle("yes_button_text".localized, for: .normal)
+        
+    }
+    
+    private func setupInitialState() {
+        questionFactory.fetchNextQuestion()
     }
     
     private func show(viewModel: QuizStepViewModel) {
@@ -56,15 +58,17 @@ final class MovieQuizViewController: UIViewController {
     }
     
     private func showNextQuestionOrResult() {
-        buttons.forEach { $0.isEnabled = true }
+        noButton.isEnabled = true
+        yesButton.isEnabled = true
         posterImageView.layer.borderWidth = .zero
         
         currentQuestionIndex += 1
-        questionFactory?.fetchNextQuestion()
+        questionFactory.fetchNextQuestion()
     }
     
     private func showAnswerResult(isCorrect: Bool) {
-        buttons.forEach { $0.isEnabled = false }
+        noButton.isEnabled = false
+        yesButton.isEnabled = false
         
         if isCorrect {
             correctAnswers += 1
@@ -74,7 +78,7 @@ final class MovieQuizViewController: UIViewController {
         addBorder(with: borderColor)
         
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + .delay) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.delay) { [weak self] in
             self?.showNextQuestionOrResult()
         }
     }
@@ -83,12 +87,12 @@ final class MovieQuizViewController: UIViewController {
         .init(
             image: .init(named: model.image) ?? UIImage(),
             question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionFactory?.quantity ?? basicSizeOfQuestions)"
+            questionNumber: "\(currentQuestionIndex + 1)/\(questionFactory.quantity)"
         )
     }
     
     private func addBorder(with color: CGColor) {
-        posterImageView.layer.borderWidth = .borderWidth
+        posterImageView.layer.borderWidth = Constants.borderWidth
         posterImageView.layer.borderColor = color
     }
     
@@ -110,9 +114,17 @@ final class MovieQuizViewController: UIViewController {
 extension MovieQuizViewController: IQuestionFactoryDelegate {
     func didReceiveNextQuestion(question: QuizQuestionModel?) {
         guard let question else {
-            let alertViewModel = QuizResultsViewModel.makeViewModel(
+            let currentResult = RecordModel(
                 correctAnswers: correctAnswers,
-                quantity: questionFactory?.quantity ?? basicSizeOfQuestions
+                totalQuestions: questionFactory.quantity,
+                date: Date()
+            )
+            
+            statisticService.storeAttempt(newResult: currentResult)
+            
+            let alertViewModel = QuizResultsViewModel.makeViewModel(
+                currentResult: currentResult,
+                statisticService: statisticService
             )
             
             let alertModel = AlertModel(
@@ -123,10 +135,11 @@ extension MovieQuizViewController: IQuestionFactoryDelegate {
                 guard let self else { return }
                 self.currentQuestionIndex = .zero
                 self.correctAnswers = .zero
-                self.questionFactory?.fetchNextQuestion()
+                self.questionFactory.resetQuestions()
+                self.questionFactory.fetchNextQuestion()
             }
                         
-            alertPresenter?.showResult(model: alertModel)
+            alertPresenter.showResult(model: alertModel)
             
             return
         }

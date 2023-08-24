@@ -8,12 +8,13 @@
 import Foundation
 
 private extension String {
-    static let commonQuestion = "common_question".localized
+    static let commonQuestion = "common_question_label".localized
 }
 
 protocol IQuestionFactory: AnyObject {
     var quantity: Int { get }
     func fetchNextQuestion()
+    func resetQuestions()
 }
 
 protocol IQuestionFactoryDelegate: AnyObject {
@@ -41,18 +42,26 @@ final class QuestionFactory: IQuestionFactory {
         .init(image: "The Ice Age Adventures of Buck Wild", text: .commonQuestion, correctAnswer: false)
     ]
     
+    private var currentIndex = 0
+    
     // MARK: - Init
     init(delegate: IQuestionFactoryDelegate) {
         self.delegate = delegate
+        questions.shuffle()
     }
     
     // MARK: - Methods
     func fetchNextQuestion() {
-        guard let index = (0..<questions.count).randomElement() else {
+        guard let question = questions[safe: currentIndex] else {
             delegate?.didReceiveNextQuestion(question: nil)
             return
         }
-        let question = questions[safe: index]
+        currentIndex += 1
         delegate?.didReceiveNextQuestion(question: question)
+    }
+    
+    func resetQuestions() {
+        currentIndex = 0
+        questions.shuffle()
     }
 }

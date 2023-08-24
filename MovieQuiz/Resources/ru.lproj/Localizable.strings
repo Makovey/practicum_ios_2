@@ -7,9 +7,15 @@
 */
 
 // common
-"common_question" = "Рейтинг этого фильма больше чем 6?";
+"common_question_label" = "Рейтинг этого фильма больше чем 6?";
+"common_question_text" = "Вопрос:";
+"no_button_text" = "Нет";
+"yes_button_text" = "Да";
 
 // alert
 "alert_title" = "Этот раунд окончен!";
 "alert_message" = "Ваш результат:";
+"alert_quiz_count" = "Количество сыгранных квизов:";
+"alert_record" = "Рекорд:";
+"alert_average_accuracy" = "Средняя точность:";
 "alert_button_text" = "Сыграть еще раз";
