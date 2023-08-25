@@ -114,10 +114,11 @@
                     </view>
                     <connections>
                         <outlet property="counterLabel" destination="U1u-jE-Tbf" id="dtk-3g-H7C"/>
+                        <outlet property="noButton" destination="H9j-ZL-R6s" id="Aka-Qu-Fv6"/>
                         <outlet property="posterImageView" destination="KxZ-Sk-kvf" id="hGV-by-0Fo"/>
                         <outlet property="questionLabel" destination="guO-Hv-mi1" id="UG6-58-Kfk"/>
-                        <outletCollection property="buttons" destination="H9j-ZL-R6s" collectionClass="NSMutableArray" id="8Ma-ta-XQL"/>
-                        <outletCollection property="buttons" destination="gJv-rX-h4a" collectionClass="NSMutableArray" id="gim-FJ-3tr"/>
+                        <outlet property="questionTitleLabel" destination="bbI-1e-nD2" id="Vew-fR-HiQ"/>
+                        <outlet property="yesButton" destination="gJv-rX-h4a" id="GqI-Tf-Lmm"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
