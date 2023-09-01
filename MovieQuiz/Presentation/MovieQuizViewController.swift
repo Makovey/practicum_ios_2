@@ -4,7 +4,7 @@ final class MovieQuizViewController: UIViewController {
     private struct Constants {
         static let borderWidth: CGFloat = 8
         static let borderRadius: CGFloat = 20
-        static let delay = 1.0
+        static let delay = 1.5
     }
     
     // MARK: - Properties
@@ -51,7 +51,7 @@ final class MovieQuizViewController: UIViewController {
     
     private func setupInitialState() {
         activityIndicator.showLoadingIndicator()
-        questionFactory.loadData()
+        questionFactory.loadDataIfNeeded()
     }
     
     private func show(viewModel: QuizStepViewModel) {
@@ -84,11 +84,12 @@ final class MovieQuizViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + Constants.delay) { [weak self] in
             self?.showNextQuestionOrResult()
         }
+        //
     }
     
     private func convert(model: QuizQuestionModel) -> QuizStepViewModel {
         .init(
-            image: UIImage(data: model.imageData) ?? UIImage(), // TODO: make async version of it
+            image: UIImage(data: model.imageData) ?? UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionFactory.quantity)"
         )
@@ -101,16 +102,16 @@ final class MovieQuizViewController: UIViewController {
     
     private func showNetworkError(message: String) {
         let alertModel = AlertModel(
-            title: "Ой, что-то пошло не так", // TODO Localize
+            title: "alert_title_error".localized,
             message: message,
-            buttonText: "Попробовать еще раз") { [weak self] in
+            buttonText: "alert_button_error_text".localized) { [weak self] in
                 guard let self else { return }
                 
                 self.currentQuestionIndex = .zero
                 self.correctAnswers = .zero
                 
                 self.questionFactory.resetQuestions()
-                self.questionFactory.loadData()
+                self.questionFactory.loadDataIfNeeded()
             }
         
         alertPresenter.showResult(model: alertModel)
@@ -177,6 +178,6 @@ extension MovieQuizViewController: IQuestionFactoryDelegate {
     
     func didFailToLoadDataFromServer(with error: NetworkError) {
         activityIndicator.hideLoadingIndicator()
-        showNetworkError(message: error.localizedDescription) // TOOD: изменить на нормальное имя ошибки
+        showNetworkError(message: error.titleMessage)
     }
 }

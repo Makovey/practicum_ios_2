@@ -31,9 +31,3 @@ struct NetworkClient: INetworkClient {
         }.resume()
     }
 }
-
-enum NetworkError: Error {
-    case serverError
-    case parseError
-    case noInternetConnectionError
-}

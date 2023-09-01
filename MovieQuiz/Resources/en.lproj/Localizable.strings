@@ -7,7 +7,7 @@
 */
 
 // common
-"common_question_label" = "Is this movie rated more than 7?";
+"common_question_label" = "Is this movie rated more than";
 "common_question_text" = "Question:";
 "no_button_text" = "No";
 "yes_button_text" = "Yes";
@@ -19,3 +19,9 @@
 "alert_record" = "Record:";
 "alert_average_accuracy" = "Average accuracy:";
 "alert_button_text" = "Play again";
+"alert_title_error" = "Oops, something went wrong";
+"alert_button_error_text" = "Try again";
+
+// errors
+"internet_connection_error" = "No internet connection";
+"unexpected_error" = "Unexpected error";

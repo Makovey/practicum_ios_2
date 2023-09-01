@@ -15,7 +15,7 @@ protocol IQuestionFactory: AnyObject {
     var quantity: Int { get }
     func fetchNextQuestion()
     func resetQuestions()
-    func loadData()
+    func loadDataIfNeeded()
 }
 
 protocol IQuestionFactoryDelegate: AnyObject {
@@ -59,19 +59,20 @@ final class QuestionFactory: IQuestionFactory {
             var imageData = Data()
            
            do {
-                imageData = try Data(contentsOf: movie.imageUrl)
+               imageData = try Data(contentsOf: movie.resizedImageURL)
             } catch {
-                print("Failed to load image") // TODO: error handling
+                delegate?.didFailToLoadDataFromServer(with: .parseError)
             }
             
-            let rating = Float(movie.rating) ?? 0
+            let movieRating = Float(movie.rating) ?? 0
             
-            let text: String = .commonQuestion.localized
-            let correctAnswer = rating > 7 // TODO: generate random questions
+            let randomRating = Int.random(in: 6...9)
+            let questionText = "\(String.commonQuestion.localized) \(randomRating)?"
+            let correctAnswer = Int(movieRating) >= randomRating
             
             let question = QuizQuestionModel(
                 imageData: imageData,
-                text: text,
+                text: questionText,
                 correctAnswer: correctAnswer
             )
             
@@ -83,7 +84,9 @@ final class QuestionFactory: IQuestionFactory {
         
     }
     
-    func loadData() {
+    func loadDataIfNeeded() {
+        guard movies.isEmpty else { return }
+
         moviesLoader.loadMovies { [weak self] result in
             guard let self else { return }
             switch result {

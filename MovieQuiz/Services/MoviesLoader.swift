@@ -16,8 +16,8 @@ struct MoviesLoader: IMoviesLoader {
     private let networkError: INetworkClient = NetworkClient()
     
     private var mostPopularMoviesUrl: URL {
-        guard let url = URL(string: "https://imdb-api.com/en/API/Top250Movies/k_zcuw1ytf") else {
-            preconditionFailure("Unable to construct mostPopularMoviesUrl") // TODO: hide token
+        guard let url = URL(string: "https://imdb-api.com/en/API/Top250Movies/\(ApiKeys.imdbDevKey.rawValue)") else {
+            preconditionFailure("Unable to construct mostPopularMoviesUrl")
         }
         return url
     }
@@ -29,6 +29,10 @@ struct MoviesLoader: IMoviesLoader {
             case .success(let data):
                 do {
                     let mostPopularMovies = try JSONDecoder().decode(MostPopularMovies.self, from: data)
+                    if !mostPopularMovies.errorMessage.isEmpty {
+                        handler(.failure(.invalidToken))
+                        return
+                    }
                     handler(.success(mostPopularMovies))
                 } catch {
                     handler(.failure(.parseError))
