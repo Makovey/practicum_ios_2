@@ -27,12 +27,13 @@ protocol IQuestionFactoryDelegate: AnyObject {
 final class QuestionFactory: IQuestionFactory {
     // MARK: - Properties
     var quantity: Int {
-        movies.count
+        moviesToShow.count
     }
     
     private let moviesLoader: IMoviesLoader
     private weak var delegate: IQuestionFactoryDelegate?
-    private var movies: [MostPopularMovie] = .init()
+    private var allMovies: [MostPopularMovie] = []
+    private var moviesToShow: [MostPopularMovie] = []
     private var currentIndex = 0
     
     // MARK: - Init
@@ -49,7 +50,7 @@ final class QuestionFactory: IQuestionFactory {
         DispatchQueue.global().async { [weak self] in
             guard let self = self else { return }
             
-            guard let movie = movies[safe: currentIndex] else {
+            guard let movie = moviesToShow[safe: currentIndex] else {
                 delegate?.didReceiveNextQuestion(question: nil)
                 return
             }
@@ -85,13 +86,17 @@ final class QuestionFactory: IQuestionFactory {
     }
     
     func loadDataIfNeeded() {
-        guard movies.isEmpty else { return }
+        guard allMovies.isEmpty else {
+            self.delegate?.didLoadDataFromServer()
+            return
+        }
 
         moviesLoader.loadMovies { [weak self] result in
             guard let self else { return }
             switch result {
             case .success(let mostPopularMovies):
-                self.movies = mostPopularMovies.items.shuffled()
+                self.allMovies = mostPopularMovies.items.shuffled()
+                self.moviesToShow = Array(allMovies.prefix(10))
                 self.delegate?.didLoadDataFromServer()
             case .failure(let error):
                 self.delegate?.didFailToLoadDataFromServer(with: error)
@@ -101,6 +106,6 @@ final class QuestionFactory: IQuestionFactory {
     
     func resetQuestions() {
         currentIndex = 0
-        movies.shuffle()
+        moviesToShow = Array(allMovies.shuffled().prefix(10))
     }
 }

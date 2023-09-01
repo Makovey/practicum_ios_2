@@ -84,7 +84,6 @@ final class MovieQuizViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + Constants.delay) { [weak self] in
             self?.showNextQuestionOrResult()
         }
-        //
     }
     
     private func convert(model: QuizQuestionModel) -> QuizStepViewModel {
@@ -104,15 +103,16 @@ final class MovieQuizViewController: UIViewController {
         let alertModel = AlertModel(
             title: "alert_title_error".localized,
             message: message,
-            buttonText: "alert_button_error_text".localized) { [weak self] in
-                guard let self else { return }
-                
-                self.currentQuestionIndex = .zero
-                self.correctAnswers = .zero
-                
-                self.questionFactory.resetQuestions()
-                self.questionFactory.loadDataIfNeeded()
-            }
+            buttonText: "alert_button_error_text".localized
+        ) { [weak self] in
+            guard let self else { return }
+            
+            self.currentQuestionIndex = .zero
+            self.correctAnswers = .zero
+            
+            self.activityIndicator.showLoadingIndicator()
+            self.questionFactory.loadDataIfNeeded()
+        }
         
         alertPresenter.showResult(model: alertModel)
     }
@@ -151,7 +151,8 @@ extension MovieQuizViewController: IQuestionFactoryDelegate {
             let alertModel = AlertModel(
                 title: alertViewModel.title,
                 message: alertViewModel.text,
-                buttonText: alertViewModel.buttonText) { [weak self] in
+                buttonText: alertViewModel.buttonText
+            ) { [weak self] in
                 guard let self else { return }
                 self.currentQuestionIndex = .zero
                 self.correctAnswers = .zero
