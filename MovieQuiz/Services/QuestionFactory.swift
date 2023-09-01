@@ -67,7 +67,7 @@ final class QuestionFactory: IQuestionFactory {
             let rating = Float(movie.rating) ?? 0
             
             let text: String = .commonQuestion.localized
-            let correctAnswer = rating > 6 // TODO: generate random questions
+            let correctAnswer = rating > 7 // TODO: generate random questions
             
             let question = QuizQuestionModel(
                 imageData: imageData,

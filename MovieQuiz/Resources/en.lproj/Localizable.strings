@@ -7,7 +7,7 @@
 */
 
 // common
-"common_question_label" = "Is this movie rated more than 6?";
+"common_question_label" = "Is this movie rated more than 7?";
 "common_question_text" = "Question:";
 "no_button_text" = "No";
 "yes_button_text" = "Yes";

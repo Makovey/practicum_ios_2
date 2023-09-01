@@ -7,7 +7,7 @@
 */
 
 // common
-"common_question_label" = "Рейтинг этого фильма больше чем 6?";
+"common_question_label" = "Рейтинг этого фильма больше чем 7?";
 "common_question_text" = "Вопрос:";
 "no_button_text" = "Нет";
 "yes_button_text" = "Да";
