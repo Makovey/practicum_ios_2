@@ -8,9 +8,10 @@ final class MovieQuizViewController: UIViewController {
     }
     
     // MARK: - Properties
-    private lazy var questionFactory: IQuestionFactory = QuestionFactory(delegate: self)
+    private lazy var questionFactory: IQuestionFactory = QuestionFactory(moviesLoader: moviesLoader, delegate: self)
     private lazy var alertPresenter: IAlertPresenter = AlertPresenter(controller: self)
-    private var statisticService: IStatisticService = StatisticService()
+    private let statisticService: IStatisticService = StatisticService()
+    private let moviesLoader: IMoviesLoader = MoviesLoader()
     private var currentQuestion: QuizQuestionModel?
 
     private var currentQuestionIndex: Int = .zero
@@ -23,6 +24,7 @@ final class MovieQuizViewController: UIViewController {
     @IBOutlet private weak var counterLabel: UILabel!
     @IBOutlet private weak var noButton: UIButton!
     @IBOutlet private weak var yesButton: UIButton!
+    @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -48,7 +50,8 @@ final class MovieQuizViewController: UIViewController {
     }
     
     private func setupInitialState() {
-        questionFactory.fetchNextQuestion()
+        activityIndicator.showLoadingIndicator()
+        questionFactory.loadData()
     }
     
     private func show(viewModel: QuizStepViewModel) {
@@ -85,7 +88,7 @@ final class MovieQuizViewController: UIViewController {
     
     private func convert(model: QuizQuestionModel) -> QuizStepViewModel {
         .init(
-            image: .init(named: model.image) ?? UIImage(),
+            image: UIImage(data: model.imageData) ?? UIImage(), // TODO: make async version of it
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionFactory.quantity)"
         )
@@ -94,6 +97,23 @@ final class MovieQuizViewController: UIViewController {
     private func addBorder(with color: CGColor) {
         posterImageView.layer.borderWidth = Constants.borderWidth
         posterImageView.layer.borderColor = color
+    }
+    
+    private func showNetworkError(message: String) {
+        let alertModel = AlertModel(
+            title: "Ой, что-то пошло не так", // TODO Localize
+            message: message,
+            buttonText: "Попробовать еще раз") { [weak self] in
+                guard let self else { return }
+                
+                self.currentQuestionIndex = .zero
+                self.correctAnswers = .zero
+                
+                self.questionFactory.resetQuestions()
+                self.questionFactory.loadData()
+            }
+        
+        alertPresenter.showResult(model: alertModel)
     }
     
     // MARK: - Actions
@@ -130,8 +150,7 @@ extension MovieQuizViewController: IQuestionFactoryDelegate {
             let alertModel = AlertModel(
                 title: alertViewModel.title,
                 message: alertViewModel.text,
-                buttonText: alertViewModel.buttonText
-            ) { [weak self] in
+                buttonText: alertViewModel.buttonText) { [weak self] in
                 guard let self else { return }
                 self.currentQuestionIndex = .zero
                 self.correctAnswers = .zero
@@ -149,5 +168,15 @@ extension MovieQuizViewController: IQuestionFactoryDelegate {
         DispatchQueue.main.async { [weak self] in
             self?.show(viewModel: viewModel)
         }
+    }
+    
+    func didLoadDataFromServer() {
+        activityIndicator.hideLoadingIndicator()
+        questionFactory.fetchNextQuestion()
+    }
+    
+    func didFailToLoadDataFromServer(with error: NetworkError) {
+        activityIndicator.hideLoadingIndicator()
+        showNetworkError(message: error.localizedDescription) // TOOD: изменить на нормальное имя ошибки
     }
 }

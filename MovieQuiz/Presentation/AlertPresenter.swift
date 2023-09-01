@@ -35,6 +35,9 @@ final class AlertPresenter: IAlertPresenter {
         }
         
         alert.addAction(action)
-        controller.present(alert, animated: true, completion: nil)
+        
+        DispatchQueue.main.async {
+            controller.present(alert, animated: true, completion: nil)
+        }
     }
 }

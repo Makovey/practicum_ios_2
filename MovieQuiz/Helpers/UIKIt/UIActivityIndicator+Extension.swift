@@ -9,12 +9,16 @@ import UIKit
 
 extension UIActivityIndicatorView {
     func showLoadingIndicator() {
-        self.isHidden = false
-        self.startAnimating()
+        DispatchQueue.main.async {
+            self.isHidden = false
+            self.startAnimating()
+        }
     }
     
     func hideLoadingIndicator() {
-        self.isHidden = true
-        self.stopAnimating()
+        DispatchQueue.main.async {
+            self.isHidden = true
+            self.stopAnimating()
+        }
     }
 }

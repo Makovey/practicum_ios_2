@@ -21,7 +21,7 @@ struct NetworkClient: INetworkClient {
             }
             
             guard let response = response as? HTTPURLResponse,
-                  !(200...399).contains(response.statusCode) else {
+                  (200...399).contains(response.statusCode) else {
                 return handler(.failure(.serverError))
             }
             
