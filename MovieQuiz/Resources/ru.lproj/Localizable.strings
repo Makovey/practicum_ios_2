@@ -7,7 +7,7 @@
 */
 
 // common
-"common_question_label" = "Рейтинг этого фильма больше чем 6?";
+"common_question_label" = "Рейтинг этого фильма больше чем";
 "common_question_text" = "Вопрос:";
 "no_button_text" = "Нет";
 "yes_button_text" = "Да";
@@ -19,3 +19,9 @@
 "alert_record" = "Рекорд:";
 "alert_average_accuracy" = "Средняя точность:";
 "alert_button_text" = "Сыграть еще раз";
+"alert_title_error" = "Ой, что-то пошло не так";
+"alert_button_error_text" = "Попробовать еще разок";
+
+// errors
+"internet_connection_error" = "Нет интернет соединения";
+"unexpected_error" = "Непредвиденная ошибка";
