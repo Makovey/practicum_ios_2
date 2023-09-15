@@ -159,8 +159,10 @@ extension MovieQuizViewController: IQuestionFactoryDelegate {
                 self.questionFactory.resetQuestions()
                 self.questionFactory.fetchNextQuestion()
             }
-                        
-            alertPresenter.showResult(model: alertModel)
+                 
+            DispatchQueue.main.async { [weak self] in
+                self?.alertPresenter.showResult(model: alertModel)
+            }
             
             return
         }
