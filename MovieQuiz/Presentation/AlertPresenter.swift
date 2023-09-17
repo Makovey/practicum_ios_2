@@ -16,30 +16,27 @@ final class AlertPresenter: IAlertPresenter {
     private weak var controller: UIViewController?
     
     // MARK: - Init
-    init(controller: UIViewController?) {
+    init(controller: UIViewController) {
         self.controller = controller
     }
     
     // MARK: - Methods
     func showResult(model: AlertModel) {
-        guard let controller else { return }
-        
-        let alert = UIAlertController(
-            title: model.title,
-            message: model.message,
-            preferredStyle: .alert
-        )
-        
-        alert.view.accessibilityIdentifier = "Game Results"
-        
-        let action = UIAlertAction(title: model.buttonText, style: .default) { _ in
-            model.completion()
-        }
-        
-        alert.addAction(action)
-        
         DispatchQueue.main.async {
-            controller.present(alert, animated: true, completion: nil)
+            let alert = UIAlertController(
+                title: model.title,
+                message: model.message,
+                preferredStyle: .alert
+            )
+            
+            alert.view.accessibilityIdentifier = "Game Results"
+            
+            let action = UIAlertAction(title: model.buttonText, style: .default) { _ in
+                model.completion()
+            }
+            
+            alert.addAction(action)
+            self.controller?.present(alert, animated: true, completion: nil)
         }
     }
 }

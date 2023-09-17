@@ -11,18 +11,19 @@ protocol IMovieQuizPresenter {
     func yesButtonTapped()
     func noButtonTapped()
     
-    func showNextQuestionOrResult()
     func loadDataIfNeeded()
     func convert(model: QuizQuestionModel) -> QuizStepViewModel
-    
-    func updateCorrectAnswers()
+    func restartGame()
 }
 
 final class MoviesQuizPresenter: IMovieQuizPresenter {
+    private struct Constants {
+        static let delay = 1.5
+    }
+    
     // MARK: - Properties
-    weak var viewController: MovieQuizViewController?
+    weak var viewController: IMovieQuizViewController?
     private lazy var questionFactory: IQuestionFactory = QuestionFactory(moviesLoader: moviesLoader, delegate: self)
-    private lazy var alertPresenter: IAlertPresenter = AlertPresenter(controller: viewController)
     private let moviesLoader: IMoviesLoader = MoviesLoader()
     private let statisticService: IStatisticService = StatisticService()
     
@@ -30,7 +31,7 @@ final class MoviesQuizPresenter: IMovieQuizPresenter {
     private var currentQuestionIndex: Int = .zero
     private var correctAnswers: Int = .zero
     
-    init(viewController: MovieQuizViewController) {
+    init(viewController: IMovieQuizViewController) {
         self.viewController = viewController
     }
 
@@ -50,30 +51,43 @@ final class MoviesQuizPresenter: IMovieQuizPresenter {
     func noButtonTapped() {
         didAnswer(answer: false)
     }
-
-    func showNextQuestionOrResult() {        
-        currentQuestionIndex += 1
-        questionFactory.fetchNextQuestion()
-    }
-            
-    func updateCorrectAnswers() {
-        correctAnswers += 1
-    }
     
     func loadDataIfNeeded() {
         questionFactory.loadDataIfNeeded()
+    }
+    
+    func restartGame() {
+        currentQuestionIndex = .zero
+        correctAnswers = .zero
+        questionFactory.resetQuestions()
+        questionFactory.fetchNextQuestion()
     }
     
     // MARK: - Private
     private func didAnswer(answer: Bool) {
         guard let currentQuestion else { return }
         let usersAnswer = answer
-        viewController?.showAnswerResult(isCorrect: usersAnswer == currentQuestion.correctAnswer)
+        showAnswerResult(isCorrect: usersAnswer == currentQuestion.correctAnswer)
     }
     
-    private func restartGame() {
-        self.currentQuestionIndex = .zero
-        self.correctAnswers = .zero
+    private func showNextQuestionOrResult() {
+        currentQuestionIndex += 1
+        questionFactory.fetchNextQuestion()
+    }
+    
+    private func showAnswerResult(isCorrect: Bool) {
+        viewController?.disableButtons()
+        
+        if isCorrect { correctAnswers += 1 }
+        
+        viewController?.highlightImageBorder(isCorrectAnswer: isCorrect)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.delay) { [weak self] in
+            guard let self else { return }
+            self.viewController?.enableButtons()
+            self.viewController?.eraseImageBorder()
+            self.showNextQuestionOrResult()
+        }
     }
 }
 
@@ -94,20 +108,7 @@ extension MoviesQuizPresenter: IQuestionFactoryDelegate {
                 statisticService: statisticService
             )
             
-            let alertModel = AlertModel(
-                title: alertViewModel.title,
-                message: alertViewModel.text,
-                buttonText: alertViewModel.buttonText
-            ) { [weak self] in
-                guard let self else { return }
-                self.restartGame()
-                self.questionFactory.resetQuestions()
-                self.questionFactory.fetchNextQuestion()
-            }
-                 
-            DispatchQueue.main.async { [weak self] in
-                self?.alertPresenter.showResult(model: alertModel)
-            }
+            viewController?.showGameResult(with: alertViewModel)
             
             return
         }
@@ -128,18 +129,6 @@ extension MoviesQuizPresenter: IQuestionFactoryDelegate {
     
     func didFailToLoadDataFromServer(with error: NetworkError) {
         viewController?.hideLoading()
-        
-        let alertModel = AlertModel(
-            title: "alert_title_error".localized,
-            message: error.titleMessage,
-            buttonText: "alert_button_error_text".localized
-        ) { [weak self] in
-            guard let self else { return }
-            self.restartGame()
-            self.viewController?.showLoading()
-            self.questionFactory.loadDataIfNeeded()
-        }
-        
-        alertPresenter.showResult(model: alertModel)
+        viewController?.showNetworkError(with: error.titleMessage)
     }
 }
