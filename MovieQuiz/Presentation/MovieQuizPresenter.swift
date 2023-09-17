@@ -37,10 +37,12 @@ final class MoviesQuizPresenter: IMovieQuizPresenter {
 
     // MARK: Methods
     func convert(model: QuizQuestionModel) -> QuizStepViewModel {
-        .init(
+        let quantity = questionFactory.quantity == 0 ? 10: questionFactory.quantity
+        
+        return .init(
             image: UIImage(data: model.imageData) ?? UIImage(),
             question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionFactory.quantity)"
+            questionNumber: "\(currentQuestionIndex + 1)/\(quantity)"
         )
     }
     
