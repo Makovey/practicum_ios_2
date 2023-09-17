@@ -10,11 +10,11 @@ final class MovieQuizViewController: UIViewController {
     // MARK: - Properties
     private lazy var questionFactory: IQuestionFactory = QuestionFactory(moviesLoader: moviesLoader, delegate: self)
     private lazy var alertPresenter: IAlertPresenter = AlertPresenter(controller: self)
+    private lazy var presenter: IMovieQuizPresenter = MoviesQuizPresenter(questionQuantity: questionFactory.quantity)
     private let statisticService: IStatisticService = StatisticService()
     private let moviesLoader: IMoviesLoader = MoviesLoader()
     private var currentQuestion: QuizQuestionModel?
 
-    private var currentQuestionIndex: Int = .zero
     private var correctAnswers: Int = .zero
     
     // MARK: - UI
@@ -65,7 +65,7 @@ final class MovieQuizViewController: UIViewController {
         yesButton.isEnabled = true
         posterImageView.layer.borderWidth = .zero
         
-        currentQuestionIndex += 1
+        presenter.switchToNextQuestion()
         questionFactory.fetchNextQuestion()
     }
     
@@ -85,15 +85,7 @@ final class MovieQuizViewController: UIViewController {
             self?.showNextQuestionOrResult()
         }
     }
-    
-    private func convert(model: QuizQuestionModel) -> QuizStepViewModel {
-        .init(
-            image: UIImage(data: model.imageData) ?? UIImage(),
-            question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionFactory.quantity)"
-        )
-    }
-    
+        
     private func addBorder(with color: CGColor) {
         posterImageView.layer.borderWidth = Constants.borderWidth
         posterImageView.layer.borderColor = color
@@ -107,7 +99,7 @@ final class MovieQuizViewController: UIViewController {
         ) { [weak self] in
             guard let self else { return }
             
-            self.currentQuestionIndex = .zero
+            self.presenter.resetQuestionIndex()
             self.correctAnswers = .zero
             
             self.activityIndicator.showLoadingIndicator()
@@ -137,7 +129,7 @@ extension MovieQuizViewController: IQuestionFactoryDelegate {
         guard let question else {
             let currentResult = RecordModel(
                 correctAnswers: correctAnswers,
-                totalQuestions: questionFactory.quantity,
+                totalQuestions: presenter.questionQuantity,
                 date: Date()
             )
             
@@ -154,7 +146,7 @@ extension MovieQuizViewController: IQuestionFactoryDelegate {
                 buttonText: alertViewModel.buttonText
             ) { [weak self] in
                 guard let self else { return }
-                self.currentQuestionIndex = .zero
+                self.presenter.resetQuestionIndex()
                 self.correctAnswers = .zero
                 self.questionFactory.resetQuestions()
                 self.questionFactory.fetchNextQuestion()
@@ -167,7 +159,7 @@ extension MovieQuizViewController: IQuestionFactoryDelegate {
             return
         }
         currentQuestion = question
-        let viewModel = convert(model: question)
+        let viewModel = presenter.convert(model: question)
         
         DispatchQueue.main.async { [weak self] in
             self?.show(viewModel: viewModel)
