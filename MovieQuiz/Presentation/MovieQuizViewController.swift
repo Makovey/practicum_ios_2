@@ -4,6 +4,7 @@ protocol IMovieQuizViewController {
     func showAnswerResult(isCorrect: Bool)
     func show(viewModel: QuizStepViewModel)
     func showLoading()
+    func hideLoading()
 }
 
 final class MovieQuizViewController: UIViewController {
@@ -14,9 +15,7 @@ final class MovieQuizViewController: UIViewController {
     }
     
     // MARK: - Properties
-    private lazy var questionFactory: IQuestionFactory = QuestionFactory(moviesLoader: moviesLoader, delegate: self)
-    private lazy var presenter: IMovieQuizPresenter = MoviesQuizPresenter(questionFactory: questionFactory)
-    private let moviesLoader: IMoviesLoader = MoviesLoader()
+    private lazy var presenter: IMovieQuizPresenter = MoviesQuizPresenter(viewController: self)
     
     // MARK: - UI
     @IBOutlet private weak var questionTitleLabel: UILabel!
@@ -70,6 +69,10 @@ final class MovieQuizViewController: UIViewController {
         activityIndicator.showLoadingIndicator()
     }
     
+    func hideLoading() {
+        activityIndicator.hideLoadingIndicator()
+    }
+    
     // MARK: - Private
     private func setupUI() {
         posterImageView.layer.masksToBounds = true
@@ -82,9 +85,8 @@ final class MovieQuizViewController: UIViewController {
     }
     
     private func setupInitialState() {
-        presenter.viewController = self
         activityIndicator.showLoadingIndicator()
-        questionFactory.loadDataIfNeeded()
+        presenter.loadDataIfNeeded()
     }
     
     private func addBorder(with color: CGColor) {
@@ -99,22 +101,5 @@ final class MovieQuizViewController: UIViewController {
     
     @IBAction private func yesButtonTapped() {
         presenter.yesButtonTapped()
-    }
-}
-
-// MARK: - IQuestionFactoryDelegate
-extension MovieQuizViewController: IQuestionFactoryDelegate {
-    func didReceiveNextQuestion(question: QuizQuestionModel?) {
-        presenter.didReceiveNextQuestion(question: question)
-    }
-    
-    func didLoadDataFromServer() {
-        activityIndicator.hideLoadingIndicator()
-        questionFactory.fetchNextQuestion()
-    }
-    
-    func didFailToLoadDataFromServer(with error: NetworkError) {
-        activityIndicator.hideLoadingIndicator()
-        presenter.showNetworkError(message: error.titleMessage)
     }
 }

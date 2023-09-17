@@ -8,15 +8,11 @@
 import UIKit
 
 protocol IMovieQuizPresenter {
-    var viewController: MovieQuizViewController? { get set }
-    
     func yesButtonTapped()
     func noButtonTapped()
     
-    func didReceiveNextQuestion(question: QuizQuestionModel?)
     func showNextQuestionOrResult()
-    func showNetworkError(message: String)
-    
+    func loadDataIfNeeded()
     func convert(model: QuizQuestionModel) -> QuizStepViewModel
     
     func updateCorrectAnswers()
@@ -24,21 +20,20 @@ protocol IMovieQuizPresenter {
 
 final class MoviesQuizPresenter: IMovieQuizPresenter {
     // MARK: - Properties
-    let questionFactory: IQuestionFactory
     weak var viewController: MovieQuizViewController?
-
-    private let statisticService: IStatisticService = StatisticService()
+    private lazy var questionFactory: IQuestionFactory = QuestionFactory(moviesLoader: moviesLoader, delegate: self)
     private lazy var alertPresenter: IAlertPresenter = AlertPresenter(controller: viewController)
+    private let moviesLoader: IMoviesLoader = MoviesLoader()
+    private let statisticService: IStatisticService = StatisticService()
     
     private var currentQuestion: QuizQuestionModel?
     private var currentQuestionIndex: Int = .zero
     private var correctAnswers: Int = .zero
-
-    // MARK: - Init
-    init(questionFactory: IQuestionFactory) {
-        self.questionFactory = questionFactory
-    }
     
+    init(viewController: MovieQuizViewController) {
+        self.viewController = viewController
+    }
+
     // MARK: Methods
     func convert(model: QuizQuestionModel) -> QuizStepViewModel {
         .init(
@@ -60,7 +55,30 @@ final class MoviesQuizPresenter: IMovieQuizPresenter {
         currentQuestionIndex += 1
         questionFactory.fetchNextQuestion()
     }
+            
+    func updateCorrectAnswers() {
+        correctAnswers += 1
+    }
     
+    func loadDataIfNeeded() {
+        questionFactory.loadDataIfNeeded()
+    }
+    
+    // MARK: - Private
+    private func didAnswer(answer: Bool) {
+        guard let currentQuestion else { return }
+        let usersAnswer = answer
+        viewController?.showAnswerResult(isCorrect: usersAnswer == currentQuestion.correctAnswer)
+    }
+    
+    private func restartGame() {
+        self.currentQuestionIndex = .zero
+        self.correctAnswers = .zero
+    }
+}
+
+// MARK: - IQuestionFactoryDelegate
+extension MoviesQuizPresenter: IQuestionFactoryDelegate {
     func didReceiveNextQuestion(question: QuizQuestionModel?) {
         guard let question else {
             let currentResult = RecordModel(
@@ -82,9 +100,7 @@ final class MoviesQuizPresenter: IMovieQuizPresenter {
                 buttonText: alertViewModel.buttonText
             ) { [weak self] in
                 guard let self else { return }
-                self.currentQuestionIndex = .zero
-                self.correctAnswers = .zero
-                
+                self.restartGame()
                 self.questionFactory.resetQuestions()
                 self.questionFactory.fetchNextQuestion()
             }
@@ -105,32 +121,25 @@ final class MoviesQuizPresenter: IMovieQuizPresenter {
         }
     }
     
-    func showNetworkError(message: String) {
+    func didLoadDataFromServer() {
+        viewController?.hideLoading()
+        questionFactory.fetchNextQuestion()
+    }
+    
+    func didFailToLoadDataFromServer(with error: NetworkError) {
+        viewController?.hideLoading()
+        
         let alertModel = AlertModel(
             title: "alert_title_error".localized,
-            message: message,
+            message: error.titleMessage,
             buttonText: "alert_button_error_text".localized
         ) { [weak self] in
             guard let self else { return }
-            
-            self.currentQuestionIndex = .zero
-            self.correctAnswers = .zero
-            
+            self.restartGame()
             self.viewController?.showLoading()
             self.questionFactory.loadDataIfNeeded()
         }
         
         alertPresenter.showResult(model: alertModel)
-    }
-    
-    func updateCorrectAnswers() {
-        correctAnswers += 1
-    }
-    
-    // MARK: - Private
-    private func didAnswer(answer: Bool) {
-        guard let currentQuestion else { return }
-        let usersAnswer = answer
-        viewController?.showAnswerResult(isCorrect: usersAnswer == currentQuestion.correctAnswer)
     }
 }
