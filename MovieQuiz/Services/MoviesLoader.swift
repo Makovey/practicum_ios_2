@@ -13,7 +13,11 @@ protocol IMoviesLoader {
 
 struct MoviesLoader: IMoviesLoader {
     // MARK: - Properties
-    private let networkError: INetworkClient = NetworkClient()
+    private let networkClient: INetworkClient
+    
+    init(networkClient: INetworkClient = NetworkClient()) {
+        self.networkClient = networkClient
+    }
     
     private var mostPopularMoviesUrl: URL {
         guard let url = URL(string: "https://imdb-api.com/en/API/Top250Movies/\(ApiKeys.imdbDevKey.rawValue)") else {
@@ -24,7 +28,7 @@ struct MoviesLoader: IMoviesLoader {
     
     // MARK: - Methods
     func loadMovies(handler: @escaping (Result<MostPopularMovies, NetworkError>) -> Void) {
-        networkError.fetch(url: mostPopularMoviesUrl) { result in
+        networkClient.fetch(url: mostPopularMoviesUrl) { result in
             switch result {
             case .success(let data):
                 do {
