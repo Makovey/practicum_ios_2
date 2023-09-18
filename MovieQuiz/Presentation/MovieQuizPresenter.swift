@@ -19,6 +19,7 @@ protocol IMovieQuizPresenter {
 final class MoviesQuizPresenter: IMovieQuizPresenter {
     private struct Constants {
         static let delay = 1.5
+        static let basicQuantityOfQuestion = 10
     }
     
     // MARK: - Properties
@@ -37,7 +38,7 @@ final class MoviesQuizPresenter: IMovieQuizPresenter {
 
     // MARK: Methods
     func convert(model: QuizQuestionModel) -> QuizStepViewModel {
-        let quantity = questionFactory.quantity == 0 ? 10: questionFactory.quantity
+        let quantity = questionFactory.quantity == .zero ? Constants.basicQuantityOfQuestion: questionFactory.quantity
         
         return .init(
             image: UIImage(data: model.imageData) ?? UIImage(),
@@ -55,6 +56,7 @@ final class MoviesQuizPresenter: IMovieQuizPresenter {
     }
     
     func loadDataIfNeeded() {
+        viewController?.showLoading()
         questionFactory.loadDataIfNeeded()
     }
     

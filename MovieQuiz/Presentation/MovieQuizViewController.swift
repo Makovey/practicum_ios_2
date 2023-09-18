@@ -99,7 +99,6 @@ final class MovieQuizViewController: UIViewController, IMovieQuizViewController 
             buttonText: "alert_button_error_text".localized
         ) { [weak self] in
             guard let self else { return }
-            self.showLoading()
             self.presenter.loadDataIfNeeded()
             self.presenter.restartGame()
         }
@@ -119,7 +118,6 @@ final class MovieQuizViewController: UIViewController, IMovieQuizViewController 
     }
     
     private func setupInitialState() {
-        showLoading()
         presenter.loadDataIfNeeded()
     }
     
